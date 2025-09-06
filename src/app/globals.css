@@ -1,26 +1,170 @@
 @import "tailwindcss";
 
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 0.75rem;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 10%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 217 91% 60%;
+  --chart-1: 217 91% 60%;
+  --chart-2: 160 84% 39%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 0 84% 60%;
+  --chart-5: 262 83% 58%;
+  --sidebar: 0 0% 7%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 10%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-ring: 217 91% 60%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Dark theme is default */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    font-size: 17px; /* tăng nhẹ kích thước chữ toàn cục để dễ đọc */
+  }
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Cobbledex-style components */
+  .pokemon-card {
+    @apply border rounded-2xl p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer;
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+  
+  .pokemon-card:hover {
+    @apply border-primary/50;
+  }
+  
+  .type-chip {
+    @apply px-3 py-1 rounded-full text-sm font-medium text-white shadow-sm;
+  }
+  
+  .type-fire { @apply bg-gradient-to-r from-red-500 to-red-600; }
+  .type-water { @apply bg-gradient-to-r from-blue-500 to-blue-600; }
+  .type-grass { @apply bg-gradient-to-r from-green-500 to-green-600; }
+  .type-electric { @apply bg-gradient-to-r from-yellow-500 to-yellow-600; }
+  .type-psychic { @apply bg-gradient-to-r from-purple-500 to-purple-600; }
+  .type-ice { @apply bg-gradient-to-r from-cyan-400 to-cyan-500; }
+  .type-dragon { @apply bg-gradient-to-r from-indigo-500 to-indigo-600; }
+  .type-dark { @apply bg-gradient-to-r from-gray-700 to-gray-800; }
+  .type-fairy { @apply bg-gradient-to-r from-pink-400 to-pink-500; }
+  .type-fighting { @apply bg-gradient-to-r from-orange-600 to-orange-700; }
+  .type-poison { @apply bg-gradient-to-r from-violet-500 to-violet-600; }
+  .type-ground { @apply bg-gradient-to-r from-amber-600 to-amber-700; }
+  .type-flying { @apply bg-gradient-to-r from-sky-400 to-sky-500; }
+  .type-bug { @apply bg-gradient-to-r from-lime-500 to-lime-600; }
+  .type-rock { @apply bg-gradient-to-r from-stone-600 to-stone-700; }
+  .type-ghost { @apply bg-gradient-to-r from-indigo-600 to-indigo-700; }
+  .type-steel { @apply bg-gradient-to-r from-slate-500 to-slate-600; }
+  .type-normal { @apply bg-gradient-to-r from-gray-500 to-gray-600; }
+  
+  .search-bar {
+    @apply border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200;
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+    outline-color: hsl(var(--primary) / 0.5);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+  
+  .nav-link {
+    @apply text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium text-[1rem];
+  }
+  
+  .nav-link.active {
+    @apply text-primary;
+  }
+  
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+  
+  .pokemon-sprite {
+    @apply w-16 h-16 mx-auto mb-3 object-contain;
+  }
+  
+  .pokemon-name {
+    @apply font-bold text-lg text-center mb-2;
+    color: hsl(var(--foreground));
+  }
+  
+  .pokemon-number {
+    @apply text-sm text-center mb-2;
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .legality-badge {
+    @apply absolute top-2 right-2;
+  }
+  
+  .stats-radar {
+    @apply w-full h-64;
+  }
+  
+  .effectiveness-grid {
+    @apply grid grid-cols-6 gap-1 text-sm;
+  }
+  
+  .effectiveness-cell {
+    @apply p-2 text-center rounded border;
+    border-color: hsl(var(--border));
+  }
+  
+  .effectiveness-4x { @apply bg-red-500/20 text-red-400 border-red-500/30; }
+  .effectiveness-2x { @apply bg-orange-500/20 text-orange-400 border-orange-500/30; }
+  .effectiveness-1x { @apply bg-gray-500/20 text-gray-400 border-gray-500/30; }
+  .effectiveness-0_5x { @apply bg-blue-500/20 text-blue-400 border-blue-500/30; }
+  .effectiveness-0x { @apply bg-gray-700/20 text-gray-500 border-gray-700/30; }
 }
