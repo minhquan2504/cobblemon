@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
     const results: Record<string, boolean> = {}
 
     if (pokemon) {
-      results.pokemon = await SmogonService.isPokemonBanned(pokemon, format)
+      // Fallback compare against string[] when needed
+      const banlist = await SmogonService.getCombinedBanlist(format)
+      const bannedPokemon = (banlist.bannedPokemon as unknown as string[])
+      results.pokemon = bannedPokemon.includes(pokemon) || await SmogonService.isPokemonBanned(pokemon, format)
     }
 
     if (move) {
@@ -37,12 +40,12 @@ export async function GET(request: NextRequest) {
 
     if (ability) {
       const banlist = await SmogonService.getCombinedBanlist(format)
-      results.ability = banlist.bannedAbilities.includes(ability)
+      results.ability = (banlist.bannedAbilities as unknown as string[]).includes(ability)
     }
 
     if (item) {
       const banlist = await SmogonService.getCombinedBanlist(format)
-      results.item = banlist.bannedItems.includes(item)
+      results.item = (banlist.bannedItems as unknown as string[]).includes(item)
     }
 
     return NextResponse.json({
