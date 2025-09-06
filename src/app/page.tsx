@@ -71,7 +71,7 @@ export default function HomePage() {
       <section className="relative py-20 px-4 text-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Cobblemon Hub
+            Harry Cobblemon
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Trung tâm thông tin giải đấu Pokémon cho cộng đồng Cobblemon. 
@@ -153,31 +153,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Sẵn sàng tham gia cộng đồng?
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Đăng ký ngay để truy cập đầy đủ tính năng và cập nhật mới nhất
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary" className="text-lg px-8 py-6">
-              <Link href="/auth/signup">
-                <Users className="mr-2 h-5 w-5" />
-                Đăng ký miễn phí
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent border-white text-white hover:bg-white hover:text-blue-600">
-              <Link href="/about">
-                <Star className="mr-2 h-5 w-5" />
-                Tìm hiểu thêm
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* CTA Section removed (site is read-only) */}
     </div>
   )
 }

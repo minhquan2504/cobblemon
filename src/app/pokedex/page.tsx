@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,7 @@ import { TypeChart } from "@/components/pokemon/TypeChart"
 import { PokemonRadarChart } from "@/components/pokemon/PokemonRadarChart"
 import { PokemonSprites } from "@/components/pokemon/PokemonSprites"
 import Image from "next/image"
+import { getPokemonList, getPokemon, transformPokemonData } from "@/lib/pokeapi"
 
 interface Pokemon {
   id: number
@@ -63,71 +64,71 @@ export default function PokedexPage() {
   const [selectedGen, setSelectedGen] = useState("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [offset, setOffset] = useState(0)
+  const [totalCount, setTotalCount] = useState<number | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const isLoadingMoreRef = useRef<boolean>(false)
   const [comparisonPokemon1, setComparisonPokemon1] = useState<Pokemon | null>(null)
   const [comparisonPokemon2, setComparisonPokemon2] = useState<Pokemon | null>(null)
 
+  const BATCH_SIZE = 60
+
+  const loadMore = async () => {
+    if (isLoadingMoreRef.current || isLoadingMore || !hasMore) return
+    isLoadingMoreRef.current = true
+    setIsLoadingMore(true)
+    try {
+      const list = await getPokemonList(BATCH_SIZE, offset)
+      setTotalCount(list.count)
+      const details = await Promise.all(
+        list.results.map(async (p) => {
+          const data = await getPokemon(p.name)
+          return transformPokemonData(data) as unknown as Pokemon
+        })
+      )
+      setPokemon(prev => {
+        const byId = new Map<number, Pokemon>(prev.map(item => [item.id, item]))
+        details.forEach(item => {
+          byId.set(item.id, item)
+        })
+        return Array.from(byId.values())
+      })
+      setOffset(prev => {
+        const next = prev + BATCH_SIZE
+        const maxCount = 1025
+        setHasMore(next < Math.min(maxCount, list.count))
+        return next
+      })
+    } catch (e) {
+      console.error("Fetch PokeAPI error:", e)
+    } finally {
+      setIsLoadingMore(false)
+      isLoadingMoreRef.current = false
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    // Mock data - trong thực tế sẽ fetch từ PokeAPI
-    const mockPokemon: Pokemon[] = [
-      {
-        id: 1,
-        name: "Bulbasaur",
-        gen: 1,
-        types: ["grass", "poison"],
-        stats: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 },
-        abilities: ["Overgrow", "Chlorophyll"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
-      },
-      {
-        id: 4,
-        name: "Charmander",
-        gen: 1,
-        types: ["fire"],
-        stats: { hp: 39, atk: 52, def: 43, spa: 60, spd: 50, spe: 65 },
-        abilities: ["Blaze", "Solar Power"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png"
-      },
-      {
-        id: 7,
-        name: "Squirtle",
-        gen: 1,
-        types: ["water"],
-        stats: { hp: 44, atk: 48, def: 65, spa: 50, spd: 64, spe: 43 },
-        abilities: ["Torrent", "Rain Dish"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"
-      },
-      {
-        id: 25,
-        name: "Pikachu",
-        gen: 1,
-        types: ["electric"],
-        stats: { hp: 35, atk: 55, def: 40, spa: 50, spd: 50, spe: 90 },
-        abilities: ["Static", "Lightning Rod"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
-      },
-      {
-        id: 150,
-        name: "Mewtwo",
-        gen: 1,
-        types: ["psychic"],
-        stats: { hp: 106, atk: 110, def: 90, spa: 154, spd: 90, spe: 130 },
-        abilities: ["Pressure", "Unnerve"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/150.png"
-      },
-      {
-        id: 151,
-        name: "Mew",
-        gen: 1,
-        types: ["psychic"],
-        stats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },
-        abilities: ["Synchronize"],
-        spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/151.png"
-      }
-    ]
-    
-    setPokemon(mockPokemon)
-    setIsLoading(false)
+    loadMore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!sentinelRef.current) return
+    const el = sentinelRef.current
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !isLoadingMoreRef.current) {
+          loadMore()
+        }
+      })
+    }, { rootMargin: "400px" })
+    io.observe(el)
+    return () => io.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentinelRef.current, offset, hasMore])
 
   const filteredPokemon = pokemon.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -345,6 +346,13 @@ export default function PokedexPage() {
                     />
                   ))}
                 </div>
+
+                {/* Infinite scroll sentinel */}
+                {hasMore && (
+                  <div ref={sentinelRef} className="w-full h-10 flex items-center justify-center mt-6">
+                    {isLoadingMore && <span className="text-sm text-muted-foreground">Đang tải thêm...</span>}
+                  </div>
+                )}
 
                 {filteredPokemon.length === 0 && (
                   <Card>

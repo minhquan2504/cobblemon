@@ -1,7 +1,6 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { FormatLegalityBadge } from "./FormatLegalityBadge"
 import { TypeChip } from "./TypeChip"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -77,13 +76,7 @@ export function PokemonCard({ pokemon, onClick, isSelected }: PokemonCardProps) 
             ))}
           </div>
 
-          {/* Format Legality */}
-          <div className="legality-badge">
-            <FormatLegalityBadge 
-              format="2v2"
-              pokemonName={pokemon.name}
-            />
-          </div>
+          
 
           {/* Base Stats Preview */}
           <div className="grid grid-cols-2 gap-2 text-xs">

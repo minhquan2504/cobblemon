@@ -10,13 +10,13 @@ import { Toaster } from "@/components/ui/sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Pokémon Tournament Hub - Trung tâm thông tin giải đấu Cobblemon",
-  description: "Trang web chính thức cho cộng đồng Cobblemon với Pokédex đầy đủ, luật giải đấu, hướng dẫn EV Training và nhiều hơn nữa.",
+  title: "Harry Cobblemon - Trung tâm thông tin Cobblemon",
+  description: "Website tra cứu Pokédex và luật giải đấu cho cộng đồng Harry Cobblemon.",
   keywords: ["pokemon", "cobblemon", "tournament", "pokedex", "ev training", "pokemon vietnam"],
-  authors: [{ name: "Pokémon Tournament Hub Team" }],
+  authors: [{ name: "Harry Cobblemon" }],
   openGraph: {
-    title: "Pokémon Tournament Hub",
-    description: "Trung tâm thông tin giải đấu Pokémon cho cộng đồng Cobblemon",
+    title: "Harry Cobblemon",
+    description: "Trung tâm tra cứu Cobblemon cho cộng đồng",
     type: "website",
     locale: "vi_VN",
   },

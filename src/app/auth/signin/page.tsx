@@ -90,7 +90,7 @@ export default function SignInPage() {
           </div>
           <CardTitle className="text-2xl">Đăng nhập</CardTitle>
           <p className="text-muted-foreground">
-            Đăng nhập vào Pokémon Tournament Hub
+            Đăng nhập vào Harry Cobblemon
           </p>
         </CardHeader>
         <CardContent>

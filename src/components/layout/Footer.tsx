@@ -1,26 +1,26 @@
 import Link from "next/link"
-import { Github, Twitter, Mail } from "lucide-react"
+import { Facebook, Link as LinkIcon } from "lucide-react"
+import { FaDiscord } from "react-icons/fa"
+
+ 
 
 export function Footer() {
   return (
     <footer className="border-t bg-background">
       <div className="container py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo và mô tả */}
+        <div className="flex flex-col md:flex-row justify-between gap-8">
+          {/* Cột trái: Logo và mô tả */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold text-xs">PT</span>
-              </div>
-              <span className="font-bold text-lg">Pokémon Tournament Hub</span>
+              <img src="/logo/logo.webp" alt="Harry Cobblemon" className="h-6 w-6" />
+              <span className="font-bold text-lg">Harry Cobblemon</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Trung tâm thông tin giải đấu Pokémon cho cộng đồng Cobblemon. 
-              Tìm hiểu luật, tra cứu Pokédex và hướng dẫn EV Training.
+            <p className="text-sm text-muted-foreground max-w-md">
+              Server Cobblemon chính thức. Tham gia thưởng đấu, tra cứu Pokédex và khám phá meta Muôn vàn Pokémon.
             </p>
           </div>
 
-          {/* Liên kết nhanh */}
+          {/* Cột giữa: Liên kết nhanh */}
           <div className="space-y-4">
             <h3 className="font-semibold">Liên kết nhanh</h3>
             <ul className="space-y-2 text-sm">
@@ -47,62 +47,38 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Hỗ trợ */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Hỗ trợ</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/help" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Trợ giúp
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Câu hỏi thường gặp
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Liên hệ
-                </Link>
-              </li>
-              <li>
-                <Link href="/bug-report" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Báo lỗi
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Liên hệ */}
-          <div className="space-y-4">
+          {/* Cột phải: Liên hệ + Discord & Icons cùng hàng */}
+          <div className="space-y-4 md:text-right md:flex md:flex-col md:items-end">
             <h3 className="font-semibold">Liên hệ</h3>
-            <div className="flex space-x-4">
+            <div className="flex items-center gap-4">
               <a
-                href="https://github.com"
+                href="https://discord.gg/Gby4u9g2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-full shadow-lg hover:scale-105 hover:shadow-xl transition-transform duration-300"
+              >
+                <FaDiscord className="w-6 h-6" />
+                JOIN US ON DISCORD
+              </a>
+              <a
+                href="https://www.facebook.com/quan.hominh.52"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Github className="h-5 w-5" />
+                <Facebook className="h-7 w-7 md:h-8 md:w-8" />
               </a>
               <a
-                href="https://twitter.com"
+                href="https://discord.gg/Gby4u9g2"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="mailto:support@pokemontournament.com"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Mail className="h-5 w-5" />
+                <LinkIcon className="h-7 w-7 md:h-8 md:w-8" />
               </a>
             </div>
-            <p className="text-xs text-muted-foreground">
-              © 2024 Pokémon Tournament Hub. Tất cả quyền được bảo lưu.
+            <p className="text-xs text-muted-foreground mt-2">
+              © {new Date().getFullYear()} Harry Cobblemon. Tất cả quyền được bảo lưu.
             </p>
           </div>
         </div>
