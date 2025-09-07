@@ -3,6 +3,8 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useEffect, useState } from "react"
+import { getMove } from "@/lib/pokeapi"
 
 interface Pokemon {
   id: number
@@ -25,56 +27,13 @@ interface PokemonMovesProps {
   pokemon: Pokemon
 }
 
-// Mock moves data - trong thực tế sẽ fetch từ API
-const mockMoves = {
-  1: [ // Bulbasaur
-    { name: "Tackle", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 35 },
-    { name: "Growl", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 40 },
-    { name: "Vine Whip", type: "Grass", category: "Physical", power: 45, accuracy: 100, pp: 25 },
-    { name: "Growth", type: "Normal", category: "Status", power: null, accuracy: null, pp: 20 },
-    { name: "Leech Seed", type: "Grass", category: "Status", power: null, accuracy: 90, pp: 10 },
-    { name: "Razor Leaf", type: "Grass", category: "Physical", power: 55, accuracy: 95, pp: 25 },
-    { name: "Sweet Scent", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 20 },
-    { name: "Synthesis", type: "Grass", category: "Status", power: null, accuracy: null, pp: 5 },
-    { name: "Worry Seed", type: "Grass", category: "Status", power: null, accuracy: 100, pp: 10 },
-    { name: "Seed Bomb", type: "Grass", category: "Physical", power: 80, accuracy: 100, pp: 15 }
-  ],
-  4: [ // Charmander
-    { name: "Scratch", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 35 },
-    { name: "Growl", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 40 },
-    { name: "Ember", type: "Fire", category: "Special", power: 40, accuracy: 100, pp: 25 },
-    { name: "Smokescreen", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 20 },
-    { name: "Dragon Rage", type: "Dragon", category: "Special", power: null, accuracy: 100, pp: 10 },
-    { name: "Scary Face", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 10 },
-    { name: "Fire Fang", type: "Fire", category: "Physical", power: 65, accuracy: 95, pp: 15 },
-    { name: "Flame Burst", type: "Fire", category: "Special", power: 70, accuracy: 100, pp: 15 },
-    { name: "Slash", type: "Normal", category: "Physical", power: 70, accuracy: 100, pp: 20 },
-    { name: "Flamethrower", type: "Fire", category: "Special", power: 90, accuracy: 100, pp: 15 }
-  ],
-  7: [ // Squirtle
-    { name: "Tackle", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 35 },
-    { name: "Tail Whip", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 30 },
-    { name: "Water Gun", type: "Water", category: "Special", power: 40, accuracy: 100, pp: 25 },
-    { name: "Withdraw", type: "Water", category: "Status", power: null, accuracy: null, pp: 40 },
-    { name: "Bite", type: "Dark", category: "Physical", power: 60, accuracy: 100, pp: 25 },
-    { name: "Water Pulse", type: "Water", category: "Special", power: 60, accuracy: 100, pp: 20 },
-    { name: "Bubble Beam", type: "Water", category: "Special", power: 65, accuracy: 100, pp: 20 },
-    { name: "Protect", type: "Normal", category: "Status", power: null, accuracy: null, pp: 10 },
-    { name: "Rain Dance", type: "Water", category: "Status", power: null, accuracy: null, pp: 5 },
-    { name: "Aqua Tail", type: "Water", category: "Physical", power: 90, accuracy: 90, pp: 10 }
-  ],
-  25: [ // Pikachu
-    { name: "Thunder Shock", type: "Electric", category: "Special", power: 40, accuracy: 100, pp: 30 },
-    { name: "Tail Whip", type: "Normal", category: "Status", power: null, accuracy: 100, pp: 30 },
-    { name: "Quick Attack", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 30 },
-    { name: "Thunder Wave", type: "Electric", category: "Status", power: null, accuracy: 90, pp: 20 },
-    { name: "Electro Ball", type: "Electric", category: "Special", power: null, accuracy: 100, pp: 10 },
-    { name: "Double Team", type: "Normal", category: "Status", power: null, accuracy: null, pp: 15 },
-    { name: "Thunderbolt", type: "Electric", category: "Special", power: 90, accuracy: 100, pp: 15 },
-    { name: "Agility", type: "Psychic", category: "Status", power: null, accuracy: null, pp: 30 },
-    { name: "Discharge", type: "Electric", category: "Special", power: 80, accuracy: 100, pp: 15 },
-    { name: "Thunder", type: "Electric", category: "Special", power: 110, accuracy: 70, pp: 10 }
-  ]
+type FetchedMove = {
+  name: string
+  type: string
+  category: "Physical" | "Special" | "Status"
+  power: number | null
+  accuracy: number | null
+  pp: number
 }
 
 const typeColors: Record<string, string> = {
@@ -105,7 +64,45 @@ const categoryColors: Record<string, string> = {
 }
 
 export function PokemonMoves({ pokemon }: PokemonMovesProps) {
-  const moves = mockMoves[pokemon.id as keyof typeof mockMoves] || []
+  const [moves, setMoves] = useState<FetchedMove[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        // Fetch the pokemon details to get move names (already available in parent but safe)
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.name}`)
+        const data = await res.json()
+        const moveNames: string[] = (data.moves || []).map((m: any) => m.move.name)
+          .slice(0, 40) // limit for performance
+        const detailed = await Promise.all(
+          moveNames.map(async (name) => {
+            try {
+              const mv = await getMove(name)
+              const effectEntry = mv.effect_entries?.find(e => e.language.name === "en")
+              const category = (mv.damage_class?.name || "status").toLowerCase()
+              return {
+                name: mv.name.replace(/-/g, " "),
+                type: mv.type?.name || "normal",
+                category: category === "physical" ? "Physical" : category === "special" ? "Special" : "Status",
+                power: mv.power,
+                accuracy: mv.accuracy,
+                pp: mv.pp,
+              } as FetchedMove
+            } catch (e) {
+              return null
+            }
+          })
+        )
+        const cleaned = detailed.filter(Boolean) as FetchedMove[]
+        if (!cancelled) setMoves(cleaned)
+      } catch (e) {
+        if (!cancelled) setMoves([])
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [pokemon.name])
   
   const physicalMoves = moves.filter(move => move.category === "Physical")
   const specialMoves = moves.filter(move => move.category === "Special")

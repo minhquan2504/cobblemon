@@ -16,7 +16,8 @@ import { TypeChart } from "@/components/pokemon/TypeChart"
 import { PokemonRadarChart } from "@/components/pokemon/PokemonRadarChart"
 import { PokemonSprites } from "@/components/pokemon/PokemonSprites"
 import Image from "next/image"
-import { getPokemonList, getPokemon, transformPokemonData } from "@/lib/pokeapi"
+import { useShiny } from "@/components/providers/Providers"
+import { getPokemon, transformPokemonData, getPokemonSpecies, getPokemonSpeciesList } from "@/lib/pokeapi"
 
 interface Pokemon {
   id: number
@@ -57,6 +58,7 @@ const typeColors: Record<string, string> = {
 }
 
 export default function PokedexPage() {
+  const { shiny, setShiny } = useShiny()
   const [pokemon, setPokemon] = useState<Pokemon[]>([])
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -80,12 +82,14 @@ export default function PokedexPage() {
     isLoadingMoreRef.current = true
     setIsLoadingMore(true)
     try {
-      const list = await getPokemonList(BATCH_SIZE, offset)
+      const list = await getPokemonSpeciesList(BATCH_SIZE, offset)
       setTotalCount(list.count)
       const details = await Promise.all(
         list.results.map(async (p) => {
-          const data = await getPokemon(p.name)
-          return transformPokemonData(data) as unknown as Pokemon
+          const species = await getPokemonSpecies(p.name)
+          const defaultVarietyName = (species as any)?.varieties?.find((v: any) => v.is_default)?.pokemon?.name || p.name
+          const data = await getPokemon(defaultVarietyName)
+          return transformPokemonData(data, (species as any)?.generation?.name) as unknown as Pokemon
         })
       )
       setPokemon(prev => {
@@ -97,8 +101,7 @@ export default function PokedexPage() {
       })
       setOffset(prev => {
         const next = prev + BATCH_SIZE
-        const maxCount = 1025
-        setHasMore(next < Math.min(maxCount, list.count))
+        setHasMore(next < list.count)
         return next
       })
     } catch (e) {
@@ -244,6 +247,20 @@ export default function PokedexPage() {
                   </Select>
                 </div>
 
+                {/* Sprite Filter */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Sprite</label>
+                  <Select value={shiny ? "shiny" : "normal"} onValueChange={(v) => setShiny(v === "shiny")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn sprite" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="shiny">Shiny</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Results Count */}
                 <div className="pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">
@@ -313,8 +330,11 @@ export default function PokedexPage() {
                   </TabsList>
 
                   <TabsContent value="stats" className="space-y-4">
-                    <PokemonStats pokemon={selectedPokemon} />
-                    <TypeChart />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <PokemonStats pokemon={selectedPokemon} />
+                      <PokemonRadarChart pokemon={selectedPokemon} />
+                    </div>
+                    <TypeChart defendingTypes={selectedPokemon.types} />
                   </TabsContent>
 
                   <TabsContent value="moves">
@@ -332,6 +352,8 @@ export default function PokedexPage() {
                   <TabsContent value="sprites">
                     <PokemonSprites pokemon={selectedPokemon} />
                   </TabsContent>
+                  
+                  {/* TODO: Form selector could be a future tab or dropdown here */}
                 </Tabs>
               </div>
             ) : (

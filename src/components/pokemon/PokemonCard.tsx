@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { TypeChip } from "./TypeChip"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { useShiny } from "@/components/providers/Providers"
 
 interface Pokemon {
   id: number
@@ -30,6 +31,7 @@ interface PokemonCardProps {
 
 
 export function PokemonCard({ pokemon, onClick, isSelected }: PokemonCardProps) {
+  const { shiny } = useShiny()
   return (
     <Card 
       className={cn(
@@ -44,7 +46,7 @@ export function PokemonCard({ pokemon, onClick, isSelected }: PokemonCardProps) 
           <div className="mb-4">
             {pokemon.spriteUrl ? (
               <Image
-                src={pokemon.spriteUrl}
+                src={(shiny ? (pokemon as any).shinySpriteUrl : undefined) || pokemon.spriteUrl}
                 alt={pokemon.name}
                 width={80}
                 height={80}

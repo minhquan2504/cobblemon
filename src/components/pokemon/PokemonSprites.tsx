@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sparkles, User, ArrowLeft, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useShiny } from "@/components/providers/Providers"
 
 interface PokemonSprites {
   normal: {
@@ -34,21 +35,25 @@ interface PokemonSpritesProps {
     name: string
     sprites?: PokemonSprites
     spriteUrl?: string
+    shinySpriteUrl?: string
   }
   className?: string
 }
 
 export function PokemonSprites({ pokemon, className }: PokemonSpritesProps) {
   const [currentView, setCurrentView] = useState<"front" | "back">("front")
+  const { shiny, setShiny } = useShiny()
   const [currentVariant, setCurrentVariant] = useState<"normal" | "shiny" | "female" | "shinyFemale">("normal")
+  const activeVariant: "normal" | "shiny" | "female" | "shinyFemale" = shiny ? "shiny" : currentVariant
 
   const getCurrentSprite = () => {
     if (pokemon.sprites) {
-      const variant = pokemon.sprites[currentVariant]
+      const variant = pokemon.sprites[activeVariant as keyof PokemonSprites] as any
       if (!variant) return pokemon.sprites.normal[currentView]
       return variant[currentView]
     }
     // Fallback cho dữ liệu mock chỉ có spriteUrl
+    if (shiny && pokemon.shinySpriteUrl) return pokemon.shinySpriteUrl
     return pokemon.spriteUrl || "/placeholder.png"
   }
 
@@ -76,24 +81,26 @@ export function PokemonSprites({ pokemon, className }: PokemonSpritesProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={currentVariant} onValueChange={(value) => setCurrentVariant(value as "normal" | "shiny" | "female" | "shinyFemale")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger 
-              value="normal" 
-              disabled={!isVariantAvailable("normal")}
-              className="flex items-center gap-1"
+        {/* Variant Toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="font-medium">Sprite</div>
+          <div className="flex items-center gap-2">
+            <button
+              className={`px-3 py-1 rounded-full text-sm font-medium ${activeVariant === "normal" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+              onClick={() => { setShiny(false); setCurrentVariant("normal") }}
             >
               Normal
-            </TabsTrigger>
-            <TabsTrigger 
-              value="shiny" 
-              disabled={!isVariantAvailable("shiny")}
-              className="flex items-center gap-1"
+            </button>
+            <button
+              className={`px-3 py-1 rounded-full text-sm font-medium ${activeVariant === "shiny" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+              onClick={() => { setShiny(true); setCurrentVariant("shiny") }}
             >
-              <Sparkles className="h-3 w-3" />
               Shiny
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
+        </div>
+
+        <Tabs value={activeVariant} onValueChange={(value) => setCurrentVariant(value as "normal" | "shiny" | "female" | "shinyFemale")} className="w-full">
           
           <TabsContent value="normal" className="space-y-4">
             <div className="space-y-4">
@@ -102,7 +109,7 @@ export function PokemonSprites({ pokemon, className }: PokemonSpritesProps) {
                 <div className="relative">
                   <Image
                     src={getCurrentSprite()}
-                    alt={`${pokemon.name} ${getVariantLabel(currentVariant)} ${currentView}`}
+                    alt={`${pokemon.name} ${getVariantLabel(activeVariant)} ${currentView}`}
                     width={200}
                     height={200}
                     className="object-contain"
@@ -139,19 +146,18 @@ export function PokemonSprites({ pokemon, className }: PokemonSpritesProps) {
               {/* Sprite Info */}
               <div className="text-center space-y-2">
                 <h3 className="font-semibold text-lg">
-                  {pokemon.name} - {getVariantLabel(currentVariant)}
+                  {pokemon.name} {" "}
+                  {activeVariant === "shiny" ? (
+                    <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">Shiny</Badge>
+                  ) : (
+                    <Badge variant="outline">Normal</Badge>
+                  )}
                 </h3>
                 <div className="flex justify-center gap-2">
                   <Badge variant="outline">
                     {currentView === "front" ? "Front" : "Back"} View
                   </Badge>
-                  {currentVariant === "shiny" && (
-                    <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Shiny
-                    </Badge>
-                  )}
-                  {(currentVariant === "female" || currentVariant === "shinyFemale") && (
+                  {(activeVariant === "female" || activeVariant === "shinyFemale") && (
                     <Badge className="bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200">
                       <User className="h-3 w-3 mr-1" />
                       Female

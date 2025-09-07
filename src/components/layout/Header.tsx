@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MobileNav } from "./MobileNav"
 import Image from "next/image"
 import { FaDiscord } from "react-icons/fa"
+ 
 
  
 
@@ -14,13 +15,16 @@ export function Header() {
         {/* Logo và Navigation */}
         <div className="flex items-center space-x-6">
           <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo/logo.webp" alt="Harry Cobblemon" width={32} height={32} />
+            <Image src="/logo/logo.webp" alt="Harry Cobblemon" width={32} height={32} style={{ height: "auto" }} />
             <span className="font-bold text-xl">Harry Cobblemon</span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-10 tracking-wide">
             <Link href="/pokedex" className="nav-link">
               Pokédex
+            </Link>
+            <Link href="/analysis" className="nav-link">
+              Phân tích chiến thuật
             </Link>
             <Link href="/tournament-rules" className="nav-link">
               Luật Giải Đấu
@@ -33,8 +37,6 @@ export function Header() {
             </Link>
           </nav>
         </div>
-
-        {/* Search Bar removed as requested */}
 
         {/* Mobile Navigation */}
         <div className="md:hidden">

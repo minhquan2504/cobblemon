@@ -42,17 +42,10 @@ const features = [
     color: "from-purple-500 to-pink-500"
   },
   {
-    icon: Search,
-    title: "Tìm Kiếm Thông Minh",
-    description: "Tìm kiếm nhanh Pokémon, moves, items và luật với autocomplete.",
-    href: "/search",
-    color: "from-indigo-500 to-blue-500"
-  },
-  {
     icon: BarChart3,
-    title: "So Sánh Pokémon",
-    description: "So sánh stats, type match-up và khả năng của các Pokémon.",
-    href: "/compare",
+    title: "Phân tích chiến thuật",
+    description: "Xem khắc hệ theo type chart, radar stats và gợi ý.",
+    href: "/analysis",
     color: "from-red-500 to-rose-500"
   }
 ]

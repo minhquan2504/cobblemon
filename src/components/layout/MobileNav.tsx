@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 const navigation = [
   { name: "Trang chủ", href: "/", icon: Home },
   { name: "Pokédex", href: "/pokedex", icon: BookOpen },
+  { name: "Phân tích chiến thuật", href: "/analysis", icon: TrendingUp },
   { name: "Luật Giải Đấu", href: "/tournament-rules", icon: Trophy },
   { name: "Luật Rank", href: "/rank-rules", icon: TrendingUp },
   { name: "EV Training", href: "/ev-training", icon: Zap },

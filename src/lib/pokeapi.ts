@@ -9,6 +9,14 @@ export interface PokeAPIPokemon {
   base_experience: number
   order: number
   is_default: boolean
+  moves?: Array<{
+    move: { name: string; url: string }
+    version_group_details: Array<{
+      level_learned_at: number
+      move_learn_method: { name: string; url: string }
+      version_group: { name: string; url: string }
+    }>
+  }>
   sprites: {
     front_default: string
     front_shiny: string
@@ -52,6 +60,55 @@ export interface PokeAPIPokemon {
     name: string
     url: string
   }
+}
+
+// Species and evolution types (minimal fields we use)
+export interface PokeAPIPokemonSpecies {
+  id: number
+  name: string
+  generation: { name: string; url: string }
+  evolution_chain: { url: string }
+  varieties: Array<{
+    is_default: boolean
+    pokemon: { name: string; url: string }
+  }>
+}
+
+export interface PokeAPIEvolutionChain {
+  id: number
+  chain: {
+    species: { name: string; url: string }
+    evolves_to: PokeAPIEvolutionChain["chain"][]
+  }
+}
+
+// Pokemon form
+export interface PokeAPIPokemonForm {
+  id: number
+  name: string
+  form_name: string | null
+  is_mega: boolean
+  is_battle_only: boolean
+  is_default: boolean
+  pokemon: { name: string; url: string }
+  sprites: {
+    front_default: string | null
+    back_default: string | null
+    front_shiny: string | null
+    back_shiny: string | null
+  }
+}
+
+// Ability
+export interface PokeAPIAbilityListEntry { name: string; url: string }
+export interface PokeAPIAbility {
+  id: number
+  name: string
+  effect_entries: Array<{
+    effect: string
+    short_effect: string
+    language: { name: string; url: string }
+  }>
 }
 
 export interface PokeAPIMove {
@@ -189,6 +246,16 @@ export async function getPokemonSpecies(idOrName: string | number) {
   return fetchWithCache(url)
 }
 
+export async function getPokemonSpeciesList(limit: number = 20, offset: number = 0): Promise<{
+  count: number
+  next: string | null
+  previous: string | null
+  results: Array<{ name: string; url: string }>
+}> {
+  const url = `${POKEAPI_BASE_URL}/pokemon-species?limit=${limit}&offset=${offset}`
+  return fetchWithCache(url)
+}
+
 // Move API functions
 export async function getMove(idOrName: string | number): Promise<PokeAPIMove> {
   const url = `${POKEAPI_BASE_URL}/move/${idOrName}`
@@ -222,12 +289,45 @@ export async function getItemList(limit: number = 20, offset: number = 0) {
   return fetchWithCache(url)
 }
 
+// Ability API functions
+export async function getAbility(idOrName: string | number): Promise<PokeAPIAbility> {
+  const url = `${POKEAPI_BASE_URL}/ability/${idOrName}`
+  return fetchWithCache<PokeAPIAbility>(url)
+}
+
+export async function getAbilityList(limit: number = 20, offset: number = 0): Promise<{ count: number; results: PokeAPIAbilityListEntry[] }> {
+  const url = `${POKEAPI_BASE_URL}/ability?limit=${limit}&offset=${offset}`
+  return fetchWithCache(url)
+}
+
+// Form API functions
+export async function getPokemonForm(idOrName: string | number): Promise<PokeAPIPokemonForm> {
+  const url = `${POKEAPI_BASE_URL}/pokemon-form/${idOrName}`
+  return fetchWithCache<PokeAPIPokemonForm>(url)
+}
+
 // Utility functions
-export function transformPokemonData(pokeApiData: PokeAPIPokemon) {
+function generationNameToNumber(generationName?: string): number | undefined {
+  if (!generationName) return undefined
+  const mapping: Record<string, number> = {
+    "generation-i": 1,
+    "generation-ii": 2,
+    "generation-iii": 3,
+    "generation-iv": 4,
+    "generation-v": 5,
+    "generation-vi": 6,
+    "generation-vii": 7,
+    "generation-viii": 8,
+    "generation-ix": 9,
+  }
+  return mapping[generationName]
+}
+
+export function transformPokemonData(pokeApiData: PokeAPIPokemon, speciesGenerationName?: string) {
   return {
     id: pokeApiData.id,
     name: pokeApiData.name,
-    gen: Math.ceil(pokeApiData.id / 151), // Rough generation calculation
+    gen: generationNameToNumber(speciesGenerationName) || Math.ceil(pokeApiData.id / 151),
     types: pokeApiData.types.map(t => t.type.name),
     stats: {
       hp: pokeApiData.stats.find(s => s.stat.name === "hp")?.base_stat || 0,
@@ -254,6 +354,35 @@ export function getTypeEffectiveness(attackingType: string, defendingType: strin
   return 1
 }
 
+// Compute defensive multipliers for a Pokemon's type combination
+export async function getDefensiveTypeMultipliers(pokemonTypes: string[]): Promise<Record<string, number>> {
+  // Fetch type data for each defending type
+  const typeDataList = await Promise.all(
+    pokemonTypes.map(async (t) => getType(t))
+  )
+  // Initialize multipliers for all attack types
+  const allTypesResp = await getTypeList()
+  const allTypes: string[] = (allTypesResp?.results || [])
+    .map((t: any) => t.name)
+    .filter((n: string) => !["unknown", "shadow"].includes(n))
+
+  const multipliers: Record<string, number> = {}
+  for (const atk of allTypes) multipliers[atk] = 1
+
+  for (const defending of typeDataList) {
+    const rel = defending.damage_relations
+    const apply = (names: Array<{ name: string }>, factor: number) => {
+      for (const n of names) {
+        if (multipliers[n.name] !== undefined) multipliers[n.name] *= factor
+      }
+    }
+    apply(rel.double_damage_from, 2)
+    apply(rel.half_damage_from, 0.5)
+    apply(rel.no_damage_from, 0)
+  }
+  return multipliers
+}
+
 // Search function
 export async function searchPokeAPI(query: string, limit: number = 10) {
   const results = []
@@ -263,7 +392,7 @@ export async function searchPokeAPI(query: string, limit: number = 10) {
     const pokemonList = await getPokemonList(1000, 0)
     const matchingPokemon = pokemonList.results
       .filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, limit)
+      .slice(0, Math.max(1, Math.floor(limit / 2)))
     
     for (const pokemon of matchingPokemon) {
       try {
@@ -276,9 +405,58 @@ export async function searchPokeAPI(query: string, limit: number = 10) {
         console.error(`Error fetching pokemon ${pokemon.name}:`, error)
       }
     }
+
+    // Search Moves
+    const moveList = await getMoveList(500, 0)
+    const matchingMoves = moveList.results
+      .filter((m: any) => m.name.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, Math.max(1, Math.floor(limit / 3)))
+    for (const mv of matchingMoves) {
+      try {
+        const m = await getMove(mv.name)
+        results.push({
+          type: "move",
+          data: { name: m.name, gen: 0, types: [m.type?.name].filter(Boolean) }
+        })
+      } catch {}
+    }
+
+    // Search Abilities
+    const abilityList = await getAbilityList(500, 0)
+    const matchingAbilities = abilityList.results
+      .filter((a: any) => a.name.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, Math.max(1, Math.floor(limit / 3)))
+    for (const ab of matchingAbilities) {
+      try {
+        const a = await getAbility(ab.name)
+        results.push({ type: "ability", data: { name: a.name, gen: 0, types: [] } })
+      } catch {}
+    }
+
+    // Search Items
+    const itemList = await getItemList(500, 0)
+    const matchingItems = itemList.results
+      .filter((i: any) => i.name.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, Math.max(1, Math.floor(limit / 3)))
+    for (const it of matchingItems) {
+      results.push({ type: "item", data: { name: it.name, gen: 0, types: [] } })
+    }
   } catch (error) {
     console.error("Error searching Pokemon:", error)
   }
   
-  return results
+  return results.slice(0, limit)
+}
+
+// Evolution helpers
+export async function getEvolutionChainBySpeciesId(speciesId: number): Promise<PokeAPIEvolutionChain> {
+  const species = await getPokemonSpecies(speciesId) as PokeAPIPokemonSpecies
+  const url = (species.evolution_chain?.url) as string
+  return fetchWithCache<PokeAPIEvolutionChain>(url)
+}
+
+export async function getEvolutionChainBySpeciesName(speciesName: string): Promise<PokeAPIEvolutionChain> {
+  const species = await getPokemonSpecies(speciesName) as PokeAPIPokemonSpecies
+  const url = (species.evolution_chain?.url) as string
+  return fetchWithCache<PokeAPIEvolutionChain>(url)
 }

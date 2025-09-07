@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, Trophy, Calendar, Users } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { TrendingUp, Calendar, Users } from "lucide-react"
+import { fetchBannedLists, SeasonEntry } from "@/lib/rank"
+import { SeasonTable } from "@/components/rank/SeasonTable"
 
 interface Season {
   id: number
@@ -139,6 +142,7 @@ export default function RankRulesPage() {
   const [rankRules, setRankRules] = useState<RankRule[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [seasonInfo, setSeasonInfo] = useState<Record<number, { time?: string; note?: string }>>({})
 
   useEffect(() => {
     setSeasons(mockSeasons)
@@ -152,6 +156,12 @@ export default function RankRulesPage() {
       setLeaderboard(mockLeaderboard)
     }
   }, [selectedSeason])
+
+  useEffect(() => {
+    fetch('/season-info.json').then(r => r.ok ? r.json() : {}).then((data) => {
+      if (data) setSeasonInfo(data)
+    }).catch(() => {})
+  }, [])
 
   const filteredRules = selectedCategory === "all" 
     ? rankRules 
@@ -169,6 +179,55 @@ export default function RankRulesPage() {
     if (rank === 3) return "🥉"
     return `#${rank}`
   }
+
+  const [bans, setBans] = useState<{ pok: string[]; held: string[]; carried: string[]; moves: string[] }>({ pok: [], held: [], carried: [], moves: [] })
+  const [searchQuery, setSearchQuery] = useState("")
+  const [seasonTab, setSeasonTab] = useState<'s1' | 's2' | 's3'>('s2')
+  useEffect(() => {
+    // Read the full global rank bans from JSON if available; fallback to txt inside fetchBannedLists
+    fetchBannedLists().then(data => setBans({ pok: data.bannedPokemon, held: data.bannedHeldItems, carried: data.bannedCarriedItems, moves: data.bannedMoves })).catch(() => {})
+  }, [])
+
+  const s1v1: SeasonEntry[] = [
+    { rank: 1, name: "CHAULOC", elo: 1031, wins: 2, losses: 0, disconnects: 0 },
+    { rank: 2, name: "DDUowg", elo: 1018, wins: 2, losses: 1, disconnects: 0 },
+    { rank: 3, name: "huyhayho", elo: 1017, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 4, name: "Waraino", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 5, name: "Pheo8", elo: 1015, wins: 3, losses: 2, disconnects: 1 },
+    { rank: 6, name: "DHTB_234", elo: 1000, wins: 1, losses: 1, disconnects: 0 },
+    { rank: 7, name: "WinJ", elo: 995, wins: 3, losses: 3, disconnects: 1 },
+    { rank: 8, name: "ABai", elo: 985, wins: 0, losses: 1, disconnects: 0 },
+    { rank: 9, name: "kundz24", elo: 984, wins: 0, losses: 1, disconnects: 0 },
+    { rank: 10, name: "HarryDepZai", elo: 970, wins: 0, losses: 2, disconnects: 0 },
+  ]
+  const s1v2: SeasonEntry[] = [
+    { rank: 1, name: "WinJ", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 2, name: "naniahiaha", elo: 984, wins: 0, losses: 1, disconnects: 0 },
+  ]
+  const s2v1: SeasonEntry[] = [
+    { rank: 1, name: "suthaibopdai", elo: 1454, wins: 68, losses: 7, disconnects: 1 },
+    { rank: 2, name: "HikaruMaruyama", elo: 1339, wins: 50, losses: 2, disconnects: 1 },
+    { rank: 3, name: "Hoang3108", elo: 1208, wins: 91, losses: 24, disconnects: 0 },
+    { rank: 4, name: "kiettuando", elo: 1166, wins: 19, losses: 3, disconnects: 0 },
+    { rank: 5, name: "slim3", elo: 1148, wins: 20, losses: 6, disconnects: 0 },
+    { rank: 6, name: "siro1256", elo: 1147, wins: 23, losses: 7, disconnects: 0 },
+    { rank: 7, name: "NamTheGame", elo: 1100, wins: 8, losses: 7, disconnects: 1 },
+    { rank: 8, name: "nhatprozz", elo: 1088, wins: 22, losses: 8, disconnects: 0 },
+    { rank: 9, name: "AQD2124", elo: 1066, wins: 18, losses: 14, disconnects: 1 },
+    { rank: 10, name: "natsuandhao", elo: 1056, wins: 6, losses: 3, disconnects: 0 },
+  ]
+  const s2v2: SeasonEntry[] = [
+    { rank: 1, name: "AQD2124", elo: 1317, wins: 46, losses: 3, disconnects: 0 },
+    { rank: 2, name: "kiettuando", elo: 1227, wins: 37, losses: 6, disconnects: 2 },
+    { rank: 3, name: "meaningggg", elo: 1143, wins: 13, losses: 0, disconnects: 0 },
+    { rank: 4, name: "Hoang3108", elo: 1121, wins: 18, losses: 2, disconnects: 0 },
+    { rank: 5, name: "Kendumboy_", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 6, name: "DANNs", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 7, name: "cacdianhthtin", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 8, name: "CHAULOC", elo: 1016, wins: 1, losses: 0, disconnects: 0 },
+    { rank: 9, name: "yrt1", elo: 1016, wins: 2, losses: 1, disconnects: 0 },
+    { rank: 10, name: "_iBlank_", elo: 1015, wins: 5, losses: 3, disconnects: 0 },
+  ]
 
   return (
     <div className="container mx-auto py-8">
@@ -197,20 +256,32 @@ export default function RankRulesPage() {
                 >
                   <div className="text-left">
                     <div className="font-medium">{season.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {season.startDate} - {season.endDate}
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Badge variant={season.active ? "default" : "secondary"} className="text-xs">
-                        {season.active ? "Active" : "Ended"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {season.participants} players
-                      </span>
-                    </div>
                   </div>
                 </Button>
               ))}
+            </CardContent>
+          </Card>
+        </div>
+        {/* Season Info */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Thông tin Season</CardTitle>
+              <CardDescription>Thời gian và ghi chú</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div>
+                  <h4 className="font-medium">Thời gian</h4>
+                  <p className="text-muted-foreground">{seasonInfo[selectedSeason?.id ?? 0]?.time || "Chưa cập nhật"}</p>
+                </div>
+                {seasonInfo[selectedSeason?.id ?? 0]?.note && (
+                  <div>
+                    <h4 className="font-medium">Ghi chú</h4>
+                    <p className="text-muted-foreground">{seasonInfo[selectedSeason?.id ?? 0]?.note}</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -219,95 +290,84 @@ export default function RankRulesPage() {
         <div className="lg:col-span-3">
           {selectedSeason ? (
             <Tabs defaultValue="rules" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rules">Luật Rank</TabsTrigger>
-                <TabsTrigger value="leaderboard">Bảng xếp hạng</TabsTrigger>
-                <TabsTrigger value="info">Thông tin Season</TabsTrigger>
+                <TabsTrigger value="seasons">Seasons</TabsTrigger>
               </TabsList>
 
               <TabsContent value="rules" className="space-y-6">
-                {/* Category Filter */}
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>Luật Rank - {selectedSeason.name}</CardTitle>
-                        <CardDescription>{selectedSeason.ruleset}</CardDescription>
-                      </div>
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Chọn danh mục" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ruleCategories.map(category => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <CardTitle>Luật Rank</CardTitle>
+                    <CardDescription>Danh sách ban áp dụng toàn bộ Season</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {filteredRules.map(rule => (
-                        <Card key={rule.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-semibold">{rule.title}</h3>
-                                  <Badge variant="outline">{rule.category}</Badge>
-                                </div>
-                                <p className="text-muted-foreground">{rule.description}</p>
-                              </div>
-                              <Badge variant="secondary" className="ml-4">
-                                Priority {rule.priority}
-                              </Badge>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                      <div className="flex-1">
+                        <Input placeholder="Tìm kiếm Pokémon, item, move..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                      </div>
                     </div>
+                    <Tabs defaultValue="pokemon" className="w-full">
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="pokemon">Pokémon</TabsTrigger>
+                        <TabsTrigger value="held">Held Items</TabsTrigger>
+                        <TabsTrigger value="carried">Carried Items</TabsTrigger>
+                        <TabsTrigger value="moves">Moves</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="pokemon" className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {bans.pok.filter(x => x.toLowerCase().includes(searchQuery.toLowerCase())).map((x, i) => (<Badge key={i} variant="outline">{x}</Badge>))}
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="held" className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {bans.held.filter(x => x.toLowerCase().includes(searchQuery.toLowerCase())).map((x, i) => (<Badge key={i} variant="outline">{x}</Badge>))}
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="carried" className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {bans.carried.filter(x => x.toLowerCase().includes(searchQuery.toLowerCase())).map((x, i) => (<Badge key={i} variant="outline">{x}</Badge>))}
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="moves" className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {bans.moves.filter(x => x.toLowerCase().includes(searchQuery.toLowerCase())).map((x, i) => (<Badge key={i} variant="outline">{x}</Badge>))}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="leaderboard" className="space-y-6">
+              <TabsContent value="seasons" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5" />
-                      Bảng xếp hạng - {selectedSeason.name}
-                    </CardTitle>
-                    <CardDescription>
-                      Top {leaderboard.length} người chơi hàng đầu
-                    </CardDescription>
+                    <CardTitle>Hạng</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {leaderboard.map(entry => (
-                        <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center gap-4">
-                            <div className="text-2xl font-bold w-8">
-                              {getRankIcon(entry.rank)}
-                            </div>
-                            <div>
-                              <div className="font-semibold">{entry.playerName}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {entry.wins}W - {entry.losses}L ({entry.winRate.toFixed(1)}%)
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold">{entry.rating}</div>
-                            <Badge className={getRankBadgeColor(entry.rank)}>
-                              Rank {entry.rank}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="mb-4 flex gap-2">
+                      <Button variant={seasonTab==='s1'?'default':'outline'} onClick={() => setSeasonTab('s1')}>Season 1</Button>
+                      <Button variant={seasonTab==='s2'?'default':'outline'} onClick={() => setSeasonTab('s2')}>Season 2</Button>
+                      <Button variant={seasonTab==='s3'?'default':'outline'} onClick={() => setSeasonTab('s3')}>Season 3</Button>
                     </div>
+                    {seasonTab==='s1' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SeasonTable title="1vs1" entries={s1v1} />
+                        <SeasonTable title="2vs2" entries={s1v2} />
+                      </div>
+                    )}
+                    {seasonTab==='s2' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SeasonTable title="1vs1" entries={s2v1} />
+                        <SeasonTable title="2vs2" entries={s2v2} />
+                      </div>
+                    )}
+                    {seasonTab==='s3' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SeasonTable title="1vs1" entries={[]} />
+                        <SeasonTable title="2vs2" entries={[]} />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

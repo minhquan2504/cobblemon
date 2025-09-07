@@ -1,0 +1,17 @@
+[Banned Pokémon]
+Mewtwo
+Rayquaza
+Groudon-Primal
+
+[Banned Held Items]
+Choice Band
+Choice Specs
+
+[Banned Carried Items]
+Expired Coupon
+
+[Banned Moves]
+Sheer Cold
+Fissure
+Guillotine
+

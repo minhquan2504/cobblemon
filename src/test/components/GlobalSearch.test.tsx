@@ -50,4 +50,14 @@ describe('GlobalSearch', () => {
     
     expect(input).toHaveValue('')
   })
+
+  it('limits results to 20 suggestions', async () => {
+    render(<GlobalSearch />)
+    const input = screen.getByPlaceholderText('Tìm kiếm Pokémon, moves, items...')
+    fireEvent.change(input, { target: { value: 'a' } })
+    await waitFor(() => {
+      const items = screen.queryAllByRole('button')
+      expect(items.length).toBeLessThanOrEqual(20)
+    })
+  })
 })

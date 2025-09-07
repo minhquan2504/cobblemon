@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Shield, Sword } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getDefensiveTypeMultipliers, getTypeList } from "@/lib/pokeapi"
 
 interface TypeEffectiveness {
   attacking: Record<string, Record<string, number>>
   defending: Record<string, Record<string, number>>
 }
 
-// Mock type effectiveness data - trong thực tế sẽ fetch từ PokeAPI
+// Fallback minimal table if network fails
 const mockTypeEffectiveness: TypeEffectiveness = {
   attacking: {
     normal: { normal: 1, fire: 1, water: 1, electric: 1, grass: 1, ice: 1, fighting: 1, poison: 1, ground: 1, flying: 1, psychic: 1, bug: 1, rock: 0.5, ghost: 0, dragon: 1, dark: 1, steel: 0.5, fairy: 1 },
@@ -90,14 +91,34 @@ const effectivenessLabels = {
   2: "Super Effective"
 }
 
-export function TypeChart() {
+export function TypeChart({ defendingTypes }: { defendingTypes?: string[] }) {
   const [selectedType, setSelectedType] = useState<string>("normal")
   const [mode, setMode] = useState<"attacking" | "defending">("attacking")
+  const [allTypes, setAllTypes] = useState<string[]>(Object.keys(mockTypeEffectiveness.attacking))
+  const [defensive, setDefensive] = useState<Record<string, number> | null>(null)
 
-  const types = Object.keys(mockTypeEffectiveness.attacking)
-  const effectiveness = mode === "attacking" 
-    ? mockTypeEffectiveness.attacking[selectedType]
-    : mockTypeEffectiveness.defending[selectedType]
+  useEffect(() => {
+    getTypeList().then((res: any) => {
+      const list = (res?.results || [])
+        .map((t: any) => t.name)
+        .filter((n: string) => !["unknown", "shadow"].includes(n))
+      if (list.length) setAllTypes(list)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!defendingTypes || defendingTypes.length === 0) return
+    getDefensiveTypeMultipliers(defendingTypes).then(setDefensive).catch(() => setDefensive(null))
+  }, [defendingTypes?.join(",")])
+
+  const effectiveness = useMemo(() => {
+    if (mode === "defending" && defensive) {
+      return defensive
+    }
+    // Attacking mode uses fallback table for now
+    const table = mockTypeEffectiveness.attacking[selectedType]
+    return table
+  }, [mode, defensive, selectedType])
 
   const getEffectivenessColor = (value: number) => {
     if (value === 0) return effectivenessColors[0]
@@ -140,7 +161,7 @@ export function TypeChart() {
             <div>
               <h3 className="font-medium mb-3">Chọn type để tấn công:</h3>
               <div className="grid grid-cols-6 gap-2 mb-4">
-                {types.map(type => (
+                {allTypes.map(type => (
                   <button
                     key={type}
                     onClick={() => setSelectedType(type)}
@@ -185,7 +206,7 @@ export function TypeChart() {
             <div>
               <h3 className="font-medium mb-3">Chọn type để phòng thủ:</h3>
               <div className="grid grid-cols-6 gap-2 mb-4">
-                {types.map(type => (
+                {allTypes.map(type => (
                   <button
                     key={type}
                     onClick={() => setSelectedType(type)}

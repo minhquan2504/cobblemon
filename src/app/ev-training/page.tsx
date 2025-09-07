@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Calculator, MapPin, Zap } from "lucide-react"
 import Image from "next/image"
+import { getPokemon, getPokemonList, transformPokemonData } from "@/lib/pokeapi"
 
 interface Pokemon {
   id: number
@@ -24,6 +25,7 @@ interface Pokemon {
     spe: number
   }
   spriteUrl?: string
+  shinySpriteUrl?: string
 }
 
 interface EVSpread {
@@ -35,62 +37,7 @@ interface EVSpread {
   spe: number
 }
 
-interface EVTrainingGuide {
-  id: number
-  pokemonId: number
-  spread: EVSpread
-  strategy: string
-  pokemon: Pokemon
-}
-
-// Mock data
-const mockPokemon: Pokemon[] = [
-  {
-    id: 1,
-    name: "Bulbasaur",
-    types: ["grass", "poison"],
-    stats: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 },
-    spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
-  },
-  {
-    id: 4,
-    name: "Charmander",
-    types: ["fire"],
-    stats: { hp: 39, atk: 52, def: 43, spa: 60, spd: 50, spe: 65 },
-    spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png"
-  },
-  {
-    id: 7,
-    name: "Squirtle",
-    types: ["water"],
-    stats: { hp: 44, atk: 48, def: 65, spa: 50, spd: 64, spe: 43 },
-    spriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"
-  }
-]
-
-const mockEVGuides: EVTrainingGuide[] = [
-  {
-    id: 1,
-    pokemonId: 1,
-    spread: { hp: 252, atk: 0, def: 0, spa: 252, spd: 4, spe: 0 },
-    strategy: "Special Attacker - Tối ưu hóa tấn công đặc biệt",
-    pokemon: mockPokemon[0]
-  },
-  {
-    id: 2,
-    pokemonId: 4,
-    spread: { hp: 0, atk: 252, def: 0, spa: 0, spd: 4, spe: 252 },
-    strategy: "Physical Sweeper - Tối ưu hóa tấn công vật lý và tốc độ",
-    pokemon: mockPokemon[1]
-  },
-  {
-    id: 3,
-    pokemonId: 7,
-    spread: { hp: 252, atk: 0, def: 252, spa: 0, spd: 4, spe: 0 },
-    strategy: "Defensive Wall - Tối ưu hóa phòng thủ",
-    pokemon: mockPokemon[2]
-  }
-]
+interface SimpleListEntry { id: number; name: string }
 
 const evTrainingSpots = [
   { stat: "HP", pokemon: "Bidoof", location: "Route 201", evs: 1 },
@@ -112,11 +59,47 @@ const powerItems = [
 
 export default function EVTrainingPage() {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null)
+  const [allList, setAllList] = useState<SimpleListEntry[]>([])
+  const [displayPokemon, setDisplayPokemon] = useState<Pokemon[]>([])
+  const [filterRole, setFilterRole] = useState<string>("all")
+  const [filterGen, setFilterGen] = useState<string>("all")
+  const [query, setQuery] = useState("")
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [errorText, setErrorText] = useState<string>("")
+  const [filterName, setFilterName] = useState<string>("")
   const [evSpread, setEVSpread] = useState<EVSpread>({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 })
   const [level, setLevel] = useState(50)
   // const [nature] = useState("Hardy") // TODO: Implement nature effects
   const [ivs, setIVs] = useState<EVSpread>({ hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 })
   const [calculatedStats, setCalculatedStats] = useState<EVSpread | null>(null)
+
+  useEffect(() => {
+    // Load 1025 names quickly
+    getPokemonList(1025, 0).then((list: any) => {
+      const entries: SimpleListEntry[] = list.results.map((r: any) => {
+        const idMatch = r.url.match(/\/(\d+)\/?$/)
+        const id = idMatch ? parseInt(idMatch[1], 10) : 0
+        return { id, name: r.name }
+      })
+      setAllList(entries)
+      // Prefetch first 60 for display
+      return Promise.all(entries.slice(0, 60).map(async (e) => {
+        try { return transformPokemonData(await getPokemon(e.name)) as Pokemon } catch { return null }
+      }))
+    }).then((arr) => {
+      if (arr) setDisplayPokemon((arr.filter(Boolean) as Pokemon[]).sort((a,b) => a.id - b.id))
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const q = query.trim().toLowerCase()
+    if (q.length < 2) { setSuggestions([]); return }
+    const sugg = allList
+      .filter(e => e.name.includes(q))
+      .slice(0, 10)
+      .map(e => e.name)
+    setSuggestions(sugg)
+  }, [query, allList])
 
   const calculateStats = () => {
     if (!selectedPokemon) return
@@ -148,9 +131,9 @@ export default function EVTrainingPage() {
 
       <Tabs defaultValue="calculator" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="calculator">EV Calculator</TabsTrigger>
-          <TabsTrigger value="guides">EV Guides</TabsTrigger>
-          <TabsTrigger value="farming">Farming Spots</TabsTrigger>
+          <TabsTrigger value="calculator">Tính EV</TabsTrigger>
+          <TabsTrigger value="guides">Hướng dẫn EV</TabsTrigger>
+          <TabsTrigger value="farming">Địa điểm luyện EV</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calculator" className="space-y-6">
@@ -160,7 +143,7 @@ export default function EVTrainingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calculator className="h-5 w-5" />
-                  EV Calculator
+                  Tính EV
                 </CardTitle>
                 <CardDescription>
                   Tính toán stats cuối cùng dựa trên EVs, IVs và level
@@ -170,24 +153,56 @@ export default function EVTrainingPage() {
                 {/* Pokemon Selection */}
                 <div className="space-y-2">
                   <Label>Pokémon</Label>
-                  <Select onValueChange={(value) => {
-                    const pokemon = mockPokemon.find(p => p.id.toString() === value)
-                    setSelectedPokemon(pokemon || null)
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn Pokémon" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockPokemon.map(pokemon => (
-                        <SelectItem key={pokemon.id} value={pokemon.id.toString()}>
-                                                  <div className="flex items-center gap-2">
-                          <Image src={pokemon.spriteUrl || ""} alt={pokemon.name} width={24} height={24} />
-                          {pokemon.name}
-                        </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input placeholder="Nhập tên Pokémon (ví dụ: pikachu)" value={query} onChange={(e) => setQuery(e.target.value)} />
+                      <Button onClick={async () => {
+                        const q = query.trim().toLowerCase()
+                        setErrorText("")
+                        try {
+                          const pdata = await getPokemon(q)
+                          setSelectedPokemon(transformPokemonData(pdata) as Pokemon)
+                        } catch {
+                          const best = allList.find(e => e.name === q) || allList.find(e => e.name.startsWith(q)) || allList.find(e => e.name.includes(q))
+                          if (best) {
+                            try {
+                              const pdata = await getPokemon(best.name)
+                              setSelectedPokemon(transformPokemonData(pdata) as Pokemon)
+                              setQuery(best.name)
+                            } catch { setErrorText(`Không tìm thấy Pokémon "${query}"`) }
+                          } else {
+                            setErrorText(`Không tìm thấy Pokémon "${query}"`)
+                          }
+                        }
+                      }}>Chọn</Button>
+                    </div>
+                    {errorText && (
+                      <div className="text-sm text-destructive">{errorText}</div>
+                    )}
+                    {suggestions.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.map(s => (
+                          <Button key={s} variant="outline" size="sm" onClick={async () => {
+                            try {
+                              const pdata = await getPokemon(s)
+                              setSelectedPokemon(transformPokemonData(pdata) as Pokemon)
+                              setQuery(s)
+                              setErrorText("")
+                            } catch {}
+                          }}>
+                            {s}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedPokemon && (
+                      <div className="flex items-center gap-3 pt-1">
+                        <Image src={selectedPokemon.spriteUrl || ""} alt={selectedPokemon.name} width={32} height={32} />
+                        <span className="font-medium capitalize">{selectedPokemon.name}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Level */}
@@ -291,45 +306,89 @@ export default function EVTrainingPage() {
         </TabsContent>
 
         <TabsContent value="guides" className="space-y-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="w-48">
+              <Label>Lọc theo vai trò</Label>
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger><SelectValue placeholder="Vai trò" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="Sweeper">Sweeper</SelectItem>
+                  <SelectItem value="Tank">Tank</SelectItem>
+                  <SelectItem value="Balanced">Balanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-48">
+              <Label>Thế hệ</Label>
+              <Select value={filterGen} onValueChange={setFilterGen}>
+                <SelectTrigger><SelectValue placeholder="Gen" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {[1,2,3,4,5,6,7,8,9].map(g => (
+                    <SelectItem key={g} value={g.toString()}>Gen {g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px] flex-1">
+              <Label>Tìm kiếm Pokémon</Label>
+              <Input placeholder="Nhập tên để lọc danh sách" value={filterName} onChange={(e) => setFilterName(e.target.value)} />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockEVGuides.map(guide => (
-              <Card key={guide.id}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Image 
-                      src={guide.pokemon.spriteUrl || ""} 
-                      alt={guide.pokemon.name}
-                      width={48}
-                      height={48}
-                    />
-                    <div>
-                      <CardTitle className="text-lg">{guide.pokemon.name}</CardTitle>
-                      <CardDescription>{guide.strategy}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <h4 className="font-medium">EV Spread:</h4>
-                    <div className="grid grid-cols-2 gap-1 text-sm">
-                      {Object.entries(guide.spread).map(([stat, value]) => (
-                        <div key={stat} className="flex justify-between">
-                          <span>{stat.toUpperCase()}:</span>
-                          <span className="font-medium">{value}</span>
+            {displayPokemon
+              .filter(p => filterGen === "all" || Math.ceil(p.id / 151).toString() === filterGen)
+              .filter(p => !filterName || p.name.toLowerCase().includes(filterName.toLowerCase()))
+              .slice(0, 60)
+              .map(p => {
+                const s = p.stats
+                const suggestions: Record<string, EVSpread> = {
+                  Sweeper: { hp: 0, atk: s.spa > s.atk ? 0 : 252, def: 0, spa: s.spa > s.atk ? 252 : 0, spd: 4, spe: 252 },
+                  Tank: { hp: 252, atk: 0, def: s.def >= s.spd ? 252 : 0, spa: 0, spd: s.spd > s.def ? 252 : 0, spe: 4 },
+                  Balanced: { hp: 172, atk: 84, def: 84, spa: 84, spd: 84, spe: 92 },
+                }
+                const role = filterRole === "all" ? "Sweeper" : filterRole
+                const spread = suggestions[role]
+                return (
+                  <Card key={p.id}>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <Image 
+                          src={p.spriteUrl || ""} 
+                          alt={p.name}
+                          width={48}
+                          height={48}
+                        />
+                        <div>
+                          <CardTitle className="text-lg">{p.name}</CardTitle>
                         </div>
-                      ))}
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full mt-3"
-                      onClick={() => setEVSpread(guide.spread)}
-                    >
-                      Áp dụng EV Spread
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Phân bổ EV ({role}):</h4>
+                        <div className="grid grid-cols-2 gap-1 text-sm">
+                          {Object.entries(spread).map(([stat, value]) => (
+                            <div key={stat} className="flex justify-between">
+                              <span>{stat.toUpperCase()}:</span>
+                              <span className="font-medium">{value}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => setEVSpread(spread)}
+                        >
+                          Áp dụng EV Spread
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
           </div>
         </TabsContent>
 
@@ -340,7 +399,7 @@ export default function EVTrainingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Địa điểm Training
+                  Địa điểm luyện EV
                 </CardTitle>
                 <CardDescription>
                   Các địa điểm tốt nhất để farm EVs
@@ -370,7 +429,7 @@ export default function EVTrainingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
-                  Power Items
+                  Trang bị hỗ trợ EV
                 </CardTitle>
                 <CardDescription>
                   Các item hỗ trợ EV Training
