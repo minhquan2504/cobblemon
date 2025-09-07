@@ -46,7 +46,7 @@ export function PokemonCard({ pokemon, onClick, isSelected }: PokemonCardProps) 
           <div className="mb-4">
             {pokemon.spriteUrl ? (
               <Image
-                src={(shiny ? (pokemon as any).shinySpriteUrl : undefined) || pokemon.spriteUrl}
+                src={(shiny ? (pokemon as unknown as { shinySpriteUrl?: string }).shinySpriteUrl : undefined) || pokemon.spriteUrl}
                 alt={pokemon.name}
                 width={80}
                 height={80}

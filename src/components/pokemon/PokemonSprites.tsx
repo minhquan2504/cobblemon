@@ -48,7 +48,7 @@ export function PokemonSprites({ pokemon, className }: PokemonSpritesProps) {
 
   const getCurrentSprite = () => {
     if (pokemon.sprites) {
-      const variant = pokemon.sprites[activeVariant as keyof PokemonSprites] as any
+      const variant = pokemon.sprites[activeVariant as keyof PokemonSprites] as { front: string; back: string } | undefined
       if (!variant) return pokemon.sprites.normal[currentView]
       return variant[currentView]
     }

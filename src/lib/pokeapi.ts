@@ -241,9 +241,9 @@ export async function getPokemonList(limit: number = 20, offset: number = 0): Pr
   return fetchWithCache(url)
 }
 
-export async function getPokemonSpecies(idOrName: string | number) {
+export async function getPokemonSpecies(idOrName: string | number): Promise<PokeAPIPokemonSpecies> {
   const url = `${POKEAPI_BASE_URL}/pokemon-species/${idOrName}`
-  return fetchWithCache(url)
+  return fetchWithCache<PokeAPIPokemonSpecies>(url)
 }
 
 export async function getPokemonSpeciesList(limit: number = 20, offset: number = 0): Promise<{
@@ -262,7 +262,7 @@ export async function getMove(idOrName: string | number): Promise<PokeAPIMove> {
   return fetchWithCache<PokeAPIMove>(url)
 }
 
-export async function getMoveList(limit: number = 20, offset: number = 0) {
+export async function getMoveList(limit: number = 20, offset: number = 0): Promise<{ count: number; results: Array<{ name: string; url: string }> }> {
   const url = `${POKEAPI_BASE_URL}/move?limit=${limit}&offset=${offset}`
   return fetchWithCache(url)
 }
@@ -273,7 +273,7 @@ export async function getType(idOrName: string | number): Promise<PokeAPIType> {
   return fetchWithCache<PokeAPIType>(url)
 }
 
-export async function getTypeList() {
+export async function getTypeList(): Promise<{ results: Array<{ name: string; url: string }> }> {
   const url = `${POKEAPI_BASE_URL}/type`
   return fetchWithCache(url)
 }
@@ -284,7 +284,7 @@ export async function getItem(idOrName: string | number): Promise<PokeAPIItem> {
   return fetchWithCache<PokeAPIItem>(url)
 }
 
-export async function getItemList(limit: number = 20, offset: number = 0) {
+export async function getItemList(limit: number = 20, offset: number = 0): Promise<{ count: number; results: Array<{ name: string; url: string }> }> {
   const url = `${POKEAPI_BASE_URL}/item?limit=${limit}&offset=${offset}`
   return fetchWithCache(url)
 }
@@ -363,7 +363,7 @@ export async function getDefensiveTypeMultipliers(pokemonTypes: string[]): Promi
   // Initialize multipliers for all attack types
   const allTypesResp = await getTypeList()
   const allTypes: string[] = (allTypesResp?.results || [])
-    .map((t: any) => t.name)
+    .map((t) => t.name)
     .filter((n: string) => !["unknown", "shadow"].includes(n))
 
   const multipliers: Record<string, number> = {}
@@ -409,7 +409,7 @@ export async function searchPokeAPI(query: string, limit: number = 10) {
     // Search Moves
     const moveList = await getMoveList(500, 0)
     const matchingMoves = moveList.results
-      .filter((m: any) => m.name.toLowerCase().includes(query.toLowerCase()))
+      .filter((m) => m.name.toLowerCase().includes(query.toLowerCase()))
       .slice(0, Math.max(1, Math.floor(limit / 3)))
     for (const mv of matchingMoves) {
       try {
@@ -424,7 +424,7 @@ export async function searchPokeAPI(query: string, limit: number = 10) {
     // Search Abilities
     const abilityList = await getAbilityList(500, 0)
     const matchingAbilities = abilityList.results
-      .filter((a: any) => a.name.toLowerCase().includes(query.toLowerCase()))
+      .filter((a) => a.name.toLowerCase().includes(query.toLowerCase()))
       .slice(0, Math.max(1, Math.floor(limit / 3)))
     for (const ab of matchingAbilities) {
       try {
@@ -436,7 +436,7 @@ export async function searchPokeAPI(query: string, limit: number = 10) {
     // Search Items
     const itemList = await getItemList(500, 0)
     const matchingItems = itemList.results
-      .filter((i: any) => i.name.toLowerCase().includes(query.toLowerCase()))
+      .filter((i) => i.name.toLowerCase().includes(query.toLowerCase()))
       .slice(0, Math.max(1, Math.floor(limit / 3)))
     for (const it of matchingItems) {
       results.push({ type: "item", data: { name: it.name, gen: 0, types: [] } })

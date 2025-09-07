@@ -75,8 +75,8 @@ export default function EVTrainingPage() {
 
   useEffect(() => {
     // Load 1025 names quickly
-    getPokemonList(1025, 0).then((list: any) => {
-      const entries: SimpleListEntry[] = list.results.map((r: any) => {
+    getPokemonList(1025, 0).then((list) => {
+      const entries: SimpleListEntry[] = list.results.map((r) => {
         const idMatch = r.url.match(/\/(\d+)\/?$/)
         const id = idMatch ? parseInt(idMatch[1], 10) : 0
         return { id, name: r.name }

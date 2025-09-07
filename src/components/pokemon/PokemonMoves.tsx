@@ -72,8 +72,8 @@ export function PokemonMoves({ pokemon }: PokemonMovesProps) {
       try {
         // Fetch the pokemon details to get move names (already available in parent but safe)
         const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.name}`)
-        const data = await res.json()
-        const moveNames: string[] = (data.moves || []).map((m: any) => m.move.name)
+        const data: { moves?: Array<{ move: { name: string } }> } = await res.json()
+        const moveNames: string[] = (data.moves || []).map((m) => m.move.name)
           .slice(0, 40) // limit for performance
         const detailed = await Promise.all(
           moveNames.map(async (name) => {

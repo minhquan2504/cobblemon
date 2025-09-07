@@ -98,9 +98,9 @@ export function TypeChart({ defendingTypes }: { defendingTypes?: string[] }) {
   const [defensive, setDefensive] = useState<Record<string, number> | null>(null)
 
   useEffect(() => {
-    getTypeList().then((res: any) => {
+    getTypeList().then((res) => {
       const list = (res?.results || [])
-        .map((t: any) => t.name)
+        .map((t) => t.name)
         .filter((n: string) => !["unknown", "shadow"].includes(n))
       if (list.length) setAllTypes(list)
     }).catch(() => {})

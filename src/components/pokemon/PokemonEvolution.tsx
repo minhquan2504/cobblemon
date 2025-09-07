@@ -38,7 +38,7 @@ export function PokemonEvolution({ pokemon }: PokemonEvolutionProps) {
     const load = async () => {
       try {
         const species = await getPokemonSpecies(pokemon.id)
-        const evo = await getEvolutionChainBySpeciesId((species as any).id)
+        const evo = await getEvolutionChainBySpeciesId(species.id)
         const flat = flattenEvolutionChain(evo)
         if (!cancelled) setChain(flat)
       } catch (e) {
@@ -100,7 +100,7 @@ function extractIdFromUrl(url: string): number {
 
 function flattenEvolutionChain(evo: PokeAPIEvolutionChain): EvoNode[] {
   const nodes: EvoNode[] = []
-  function walk(node: PokeAPIEvolutionChain["chain"], trigger?: any) {
+  function walk(node: PokeAPIEvolutionChain["chain"], trigger?: { min_level?: number; trigger?: { name?: string }; item?: { name?: string } } | undefined) {
     const speciesName = node.species.name
     const speciesId = extractIdFromUrl(node.species.url)
     const condition = triggerToText(trigger)
@@ -112,9 +112,10 @@ function flattenEvolutionChain(evo: PokeAPIEvolutionChain): EvoNode[] {
     })
     for (const nxt of node.evolves_to) {
       // Attempt to read first trigger; PokeAPI puts evolution_details array on the evolves_to item
-      const anyNxt: any = nxt as any
-      const details = Array.isArray(anyNxt.evolution_details) ? anyNxt.evolution_details[0] : undefined
-      walk(nxt as any, details)
+      const details = Array.isArray((nxt as unknown as { evolution_details?: Array<unknown> }).evolution_details)
+        ? (nxt as unknown as { evolution_details: Array<{ min_level?: number; trigger?: { name?: string }; item?: { name?: string } }> }).evolution_details[0]
+        : undefined
+      walk(nxt as unknown as PokeAPIEvolutionChain["chain"], details)
     }
   }
   walk(evo.chain)
@@ -124,7 +125,7 @@ function flattenEvolutionChain(evo: PokeAPIEvolutionChain): EvoNode[] {
   return Array.from(map.values())
 }
 
-function triggerToText(details?: any): string {
+function triggerToText(details?: { min_level?: number; trigger?: { name?: string }; item?: { name?: string } }): string {
   if (!details) return "Base form"
   if (details.min_level) return `Level ${details.min_level}`
   if (details.trigger?.name === "use-item" && details.item?.name) return camelToTitle(details.item.name)

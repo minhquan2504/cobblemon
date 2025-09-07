@@ -47,11 +47,11 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     // load species list for autocomplete
-    getPokemonList(1025, 0).then((list: any) => {
-      const entries = list.results.map((r: any) => {
+    getPokemonList(1025, 0).then((list) => {
+      const entries = list.results.map((r) => {
         const idMatch = r.url.match(/\/(\d+)\/?$/)
         const id = idMatch ? parseInt(idMatch[1], 10) : 0
-        return { id, name: r.name as string }
+        return { id, name: r.name }
       })
       setAllNames(entries)
     }).catch(() => {})
@@ -157,7 +157,7 @@ export default function AnalysisPage() {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-24 h-24 bg-muted rounded-2xl flex items-center justify-center">
-                  <Image src={shiny && (selected as any).shinySpriteUrl ? (selected as any).shinySpriteUrl : selected.spriteUrl || "/placeholder.png"} alt={selected.name} width={80} height={80} className="w-20 h-20 object-contain" />
+                  <Image src={shiny && (selected as unknown as { shinySpriteUrl?: string }).shinySpriteUrl ? (selected as unknown as { shinySpriteUrl?: string }).shinySpriteUrl as string : selected.spriteUrl || "/placeholder.png"} alt={selected.name} width={80} height={80} className="w-20 h-20 object-contain" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold capitalize">{selected.name}</h2>

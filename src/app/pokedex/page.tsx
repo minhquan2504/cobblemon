@@ -87,9 +87,9 @@ export default function PokedexPage() {
       const details = await Promise.all(
         list.results.map(async (p) => {
           const species = await getPokemonSpecies(p.name)
-          const defaultVarietyName = (species as any)?.varieties?.find((v: any) => v.is_default)?.pokemon?.name || p.name
+          const defaultVarietyName = species?.varieties?.find((v) => v.is_default)?.pokemon?.name || p.name
           const data = await getPokemon(defaultVarietyName)
-          return transformPokemonData(data, (species as any)?.generation?.name) as unknown as Pokemon
+          return transformPokemonData(data, species?.generation?.name) as unknown as Pokemon
         })
       )
       setPokemon(prev => {
